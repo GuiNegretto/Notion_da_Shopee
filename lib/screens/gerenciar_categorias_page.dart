@@ -1,11 +1,11 @@
 // Novo arquivo: lib/screens/gerenciar_categorias_page.dart
 
 import 'package:flutter/material.dart';
-import '../data/nota_repository.dart';
+import '../repositories/nota_repository.dart';
 
 class GerenciarCategoriasPage extends StatefulWidget {
-  final NotaRepository repo;
-  const GerenciarCategoriasPage({super.key, required this.repo});
+  final NotaRepository notaRepository;
+  const GerenciarCategoriasPage({super.key, required this.notaRepository});
 
   @override
   State<GerenciarCategoriasPage> createState() => _GerenciarCategoriasPageState();
@@ -22,7 +22,7 @@ class _GerenciarCategoriasPageState extends State<GerenciarCategoriasPage> {
 
   Future<void> _carregarCategorias() async {
     setState(() {
-      _categoriasFuture = widget.repo.buscarCategoriasUnicas();
+      _categoriasFuture = widget.notaRepository.buscarCategoriasUnicas();
     });
   }
 
@@ -44,7 +44,7 @@ class _GerenciarCategoriasPageState extends State<GerenciarCategoriasPage> {
           ElevatedButton(
             onPressed: () async {
               if (nomeController.text.isNotEmpty) {
-                await widget.repo.adicionarCategoria(nomeController.text);
+                await widget.notaRepository.adicionarCategoria(nomeController.text);
                 Navigator.pop(context);
                 _carregarCategorias();
               }
@@ -58,7 +58,7 @@ class _GerenciarCategoriasPageState extends State<GerenciarCategoriasPage> {
 
   Future<void> _excluirCategoria(String categoria) async {
     // Adicionar um diálogo de confirmação aqui
-    await widget.repo.excluirCategoria(categoria);
+    await widget.notaRepository.excluirCategoria(categoria);
     _carregarCategorias();
   }
 

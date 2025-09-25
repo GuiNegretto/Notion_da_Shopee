@@ -26,7 +26,8 @@ class AppDatabase {
               criado_em TEXT,
               atualizado_em TEXT,
               favorito INTEGER DEFAULT 0,
-              prioridade TEXT DEFAULT 'Baixa'
+              prioridade TEXT DEFAULT 'Baixa',
+              excluido INTEGER DEFAULT 0
             )
           ''');
           // Tabela para armazenar as categorias

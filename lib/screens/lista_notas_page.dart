@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import '../data/nota_repository.dart';
+import '../repositories/nota_repository.dart';
 import '../models/nota.dart';
 import 'nota_page.dart';
 import 'gerenciar_categorias_page.dart';
 
 class ListaNotasPage extends StatefulWidget {
-  final NotaRepository repo;
-  const ListaNotasPage({super.key, required this.repo});
+  final NotaRepository notaRepository;
+  const ListaNotasPage({super.key, required this.notaRepository});
 
   @override
   State<ListaNotasPage> createState() => _ListaNotasPageState();
@@ -39,7 +39,7 @@ class _ListaNotasPageState extends State<ListaNotasPage> {
 
   Future<void> _carregarNotas() async {
     final termo = _searchController.text;
-    final lista = await widget.repo.buscarNotas(
+    final lista = await widget.notaRepository.buscarNotas(
       termo: termo,
       prioridade: _filtroPrioridade == "Todas" ? null : _filtroPrioridade,
       favorito: _filtroFavorito ? true : null,
@@ -59,7 +59,7 @@ class _ListaNotasPageState extends State<ListaNotasPage> {
     await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => NotaPage(repo: widget.repo, nota: nota),
+        builder: (context) => NotaPage(notaRepository: widget.notaRepository, nota: nota),
       ),
     );
     _carregarNotas();
@@ -69,7 +69,7 @@ class _ListaNotasPageState extends State<ListaNotasPage> {
     await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => GerenciarCategoriasPage(repo: widget.repo),
+        builder: (context) => GerenciarCategoriasPage(notaRepository: widget.notaRepository),
       ),
     );
     setState(() {});
@@ -216,7 +216,7 @@ class _ListaNotasPageState extends State<ListaNotasPage> {
                           ),
                         ),
                       FutureBuilder<List<String>>(
-                        future: widget.repo.buscarCategoriasUnicas(),
+                        future: widget.notaRepository.buscarCategoriasUnicas(),
                         builder: (context, snapshot) {
                           if (snapshot.connectionState == ConnectionState.waiting) {
                             return const Center(child: CircularProgressIndicator());
@@ -353,7 +353,7 @@ class _ListaNotasPageState extends State<ListaNotasPage> {
                               color: nota.favorito ? Colors.red : null,
                             ),
                             onPressed: () async {
-                              await widget.repo.marcarNotaComoFavorita(nota.id!, !nota.favorito);
+                              await widget.notaRepository.marcarNotaComoFavorita(nota.id!, !nota.favorito);
                               await _carregarNotas();
                             },
                           ),

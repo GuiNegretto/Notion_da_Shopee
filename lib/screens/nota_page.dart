@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import '../data/nota_repository.dart';
+import '../repositories/nota_repository.dart';
 import '../models/nota.dart';
 
 class NotaPage extends StatefulWidget {
-  final NotaRepository repo;
+  final NotaRepository notaRepository;
   final Nota? nota;
-  const NotaPage({super.key, required this.repo, this.nota});
+  const NotaPage({super.key, required this.notaRepository, this.nota});
 
   @override
   State<NotaPage> createState() => _NotaPageState();
@@ -39,7 +39,7 @@ class _NotaPageState extends State<NotaPage> {
     }
 
     if (widget.nota != null) {
-      await widget.repo.atualizarNota(
+      await widget.notaRepository.atualizarNota(
         widget.nota!.id!,
         _tituloController.text,
         _conteudoController.text,
@@ -48,7 +48,7 @@ class _NotaPageState extends State<NotaPage> {
         categorias: _categorias,
       );
     } else {
-      await widget.repo.inserirNota(
+      await widget.notaRepository.inserirNota(
         _tituloController.text,
         _conteudoController.text,
         prioridade: _prioridade,
@@ -107,7 +107,7 @@ class _NotaPageState extends State<NotaPage> {
 
     // Se o usuário confirmar a exclusão
     if (confirmar == true) {
-      await widget.repo.excluirNota(widget.nota!.id!);
+      await widget.notaRepository.excluirNota(widget.nota!.id!);
       Navigator.pop(context); // Volta para a lista de notas
     }
   },

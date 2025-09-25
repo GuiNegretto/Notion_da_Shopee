@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import '../data/nota_repository.dart';
+import '../repositories/nota_repository.dart';
 import '../models/nota.dart';
 
 class BuscaAvancadaPage extends StatefulWidget {
-  final NotaRepository repo;
-  const BuscaAvancadaPage({super.key, required this.repo});
+  final NotaRepository notaRepository;
+  const BuscaAvancadaPage({super.key, required this.notaRepository});
 
   @override
   State<BuscaAvancadaPage> createState() => _BuscaAvancadaPageState();
@@ -19,7 +19,7 @@ class _BuscaAvancadaPageState extends State<BuscaAvancadaPage> {
 
   Future<void> _buscarNotas() async {
     setState(() => isLoading = true);
-    final resultadosRaw = await widget.repo.buscarNotas(
+    final resultadosRaw = await widget.notaRepository.buscarNotas(
       termo: _termoController.text,
       prioridade: _filtroPrioridade == "Todas" ? null : _filtroPrioridade ,
       favorito: _filtroFavorito ? true : null,
