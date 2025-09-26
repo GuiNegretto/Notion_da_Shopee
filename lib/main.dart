@@ -1,19 +1,24 @@
 import 'package:flutter/material.dart';
 import 'data/database.dart';
 import 'repositories/nota_repository.dart';
+import 'repositories/categoria_repository.dart';
+import 'repositories/tag_repository.dart';
 import 'screens/lista_notas_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final db = await AppDatabase.initDb();
-  final notaRepository = NotaRepository(db);
+  final categoriaRepository = CategoriaRepository(db);
+  final tagRepository = TagRepository(db);
+  final notaRepository = NotaRepository(db, categoriaRepository, tagRepository);
 
-  runApp(MyApp(notaRepository: notaRepository));
+  runApp(MyApp(notaRepository: notaRepository, categoriaRepository: categoriaRepository));
 }
 
 class MyApp extends StatelessWidget {
   final NotaRepository notaRepository;
-  const MyApp({super.key, required this.notaRepository});
+  final CategoriaRepository categoriaRepository;
+  const MyApp({super.key, required this.notaRepository, required this.categoriaRepository});
 
   @override
   Widget build(BuildContext context) {
@@ -31,7 +36,7 @@ class MyApp extends StatelessWidget {
           backgroundColor: Colors.blueAccent,
         ),
       ),
-      home: ListaNotasPage(notaRepository: notaRepository),
+      home: ListaNotasPage(notaRepository: notaRepository, categoriaRepository: categoriaRepository),
     );
   }
 }

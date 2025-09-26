@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import '../repositories/nota_repository.dart';
+import '../repositories/categoria_repository.dart';
 import '../models/nota.dart';
 import 'nota_page.dart';
 import 'gerenciar_categorias_page.dart';
 
 class ListaNotasPage extends StatefulWidget {
   final NotaRepository notaRepository;
-  const ListaNotasPage({super.key, required this.notaRepository});
+  final CategoriaRepository categoriaRepository;
+  const ListaNotasPage({super.key, required this.notaRepository, required this.categoriaRepository});
 
   @override
   State<ListaNotasPage> createState() => _ListaNotasPageState();
@@ -69,7 +71,7 @@ class _ListaNotasPageState extends State<ListaNotasPage> {
     await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => GerenciarCategoriasPage(notaRepository: widget.notaRepository),
+        builder: (context) => GerenciarCategoriasPage(notaRepository: widget.notaRepository, categoriaRepository: widget.categoriaRepository),
       ),
     );
     setState(() {});
@@ -216,7 +218,7 @@ class _ListaNotasPageState extends State<ListaNotasPage> {
                           ),
                         ),
                       FutureBuilder<List<String>>(
-                        future: widget.notaRepository.buscarCategoriasUnicas(),
+                        future: widget.categoriaRepository.buscarCategoriasUnicas(),
                         builder: (context, snapshot) {
                           if (snapshot.connectionState == ConnectionState.waiting) {
                             return const Center(child: CircularProgressIndicator());
