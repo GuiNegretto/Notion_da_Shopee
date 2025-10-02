@@ -26,6 +26,10 @@ class _ListaNotasPageState extends State<ListaNotasPage> {
   bool _isMenuExpanded = true;
   final double _menuWidth = 250.0;
 
+  bool _showMenuContent = true; 
+
+  String _selectedMenuId = 'Todas as Notas'; 
+
   @override
   void initState() {
     super.initState();
@@ -178,15 +182,29 @@ class _ListaNotasPageState extends State<ListaNotasPage> {
                   onPressed: () {
                     setState(() {
                       _isMenuExpanded = !_isMenuExpanded;
+                      if (_isMenuExpanded) {
+                        _showMenuContent = false;
+                        Future.delayed(const Duration(milliseconds: 300), () {
+                          if (mounted) {
+                            setState(() {
+                              _showMenuContent = true;
+                            });
+                          }
+                        });
+                      } else {
+                        _showMenuContent = false;
+                      }
                     });
                   },
                 ),
                 const Divider(color: Colors.white),
                 Expanded(
-                  child: ListView(
+                  child: _showMenuContent || !_isMenuExpanded
+                      ? ListView(
                     padding: EdgeInsets.zero,
                     children: [
                       _buildMenuItem(
+                        id: "Nova Nota",
                         icon: Icons.note,
                         text: 'Nova Nota',
                         onTap: () {
@@ -194,19 +212,62 @@ class _ListaNotasPageState extends State<ListaNotasPage> {
                         },
                       ),
                       _buildMenuItem(
+                        id: "Importar",
                         icon: Icons.file_upload,
                         text: 'Importar',
                         onTap: () {},
                       ),
                       _buildMenuItem(
+                        id: "Exportar",
                         icon: Icons.file_download,
                         text: 'Exportar',
                         onTap: () {},
                       ),
                       _buildMenuItem(
+                        id: "Configurações",
                         icon: Icons.settings,
                         text: 'Configurações',
                         onTap: () {},
+                      ),
+                      const Divider(color: Colors.white),
+                      
+                      _buildMenuItem(
+                        id: 'Favoritas',
+                        icon: Icons.star,
+                        text: 'Favoritas',
+                        onTap: () {
+                          setState(() {
+                            _filtroFavorito = true;
+                            _currentTitle = "Favoritas";
+                            _selectedMenuId = "Favoritas";
+                            _carregarNotas();
+                          });
+                        },
+                      ),
+                      _buildMenuItem(
+                        id: 'Todas as Notas',
+                        icon: Icons.description,
+                        text: 'Todas as Notas',
+                        onTap: () {
+                          setState(() {
+                            _filtroFavorito = false;
+                            _currentTitle = "Minhas Notas";
+                            _selectedMenuId = "Todas as Notas";
+                            _carregarNotas();
+                          });
+                        },
+                      ),
+                      _buildMenuItem(
+                        id: "Lixeira",
+                        icon: Icons.delete,
+                        text: 'Lixeira',
+                        onTap: () {
+                          setState(() {
+                            _currentTitle = "Lixeira";
+                            _selectedMenuId = "Lixeira";
+                            // TODO: Lógica para exibir notas na lixeira
+                          });
+                        },
                       ),
                       const Divider(color: Colors.white),
                       if (_isMenuExpanded)
@@ -229,6 +290,7 @@ class _ListaNotasPageState extends State<ListaNotasPage> {
                             return Column(
                               children: [
                                 ...categorias.map((categoria) => _buildMenuItem(
+                                  id: categoria,
                                   icon: Icons.folder,
                                   text: categoria,
                                   onTap: () {
@@ -236,8 +298,9 @@ class _ListaNotasPageState extends State<ListaNotasPage> {
                                   },
                                 )).toList(),
                                 _buildMenuItem(
+                                  id: "Gerenciar Categorias",
                                   icon: Icons.add,
-                                  text: 'Adicionar Categoria',
+                                  text: "Gerenciar Categorias",
                                   onTap: () {
                                     _navegarGerenciarCategoria();
                                   },
@@ -247,49 +310,13 @@ class _ListaNotasPageState extends State<ListaNotasPage> {
                           }
                         },
                       ),
-                      const Divider(color: Colors.white),
-                      if (_isMenuExpanded)
-                        const Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 16),
-                          child: Align(
-                            alignment: Alignment.centerLeft,
-                            child: Text('Favoritos', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
-                          ),
-                        ),
-                      _buildMenuItem(
-                        icon: Icons.star,
-                        text: 'Favoritas',
-                        onTap: () {
-                          setState(() {
-                            _filtroFavorito = true;
-                            _currentTitle = "Favoritos";
-                            _carregarNotas();
-                          });
-                        },
-                      ),
-                      _buildMenuItem(
-                        icon: Icons.description,
-                        text: 'Todas as Notas',
-                        onTap: () {
-                          setState(() {
-                            _filtroFavorito = false;
-                            _currentTitle = "Minhas Notas";
-                            _carregarNotas();
-                          });
-                        },
-                      ),
-                      _buildMenuItem(
-                        icon: Icons.delete,
-                        text: 'Lixeira',
-                        onTap: () {
-                          setState(() {
-                            _currentTitle = "Lixeira";
-                            // TODO: Lógica para exibir notas na lixeira
-                          });
-                        },
-                      ),
+                      
                     ],
-                  ),
+                  )
+                  // Estado de Loading/Minimizado
+                      : Center(
+                          child: _isMenuExpanded ? const CircularProgressIndicator(color: Colors.white) : const SizedBox(),
+                        ),
                 ),
               ],
             ),
@@ -374,22 +401,36 @@ class _ListaNotasPageState extends State<ListaNotasPage> {
   }
 
   Widget _buildMenuItem({
+    required String id,
     required IconData icon,
     required String text,
     required VoidCallback onTap,
   }) {
+    final bool isSelected = _selectedMenuId == id;
+    final Color highlightColor = isSelected ? Colors.white12 : Colors.transparent;
+
+
     return InkWell(
       onTap: onTap,
+      child: Container(
+          color: highlightColor,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Row(
+        child: 
+        Row(
           children: [
             Icon(icon, color: Colors.white),
             if (_isMenuExpanded) const SizedBox(width: 16),
-            if (_isMenuExpanded) Text(text, style: const TextStyle(color: Colors.white)),
+            if (_isMenuExpanded)
+            AnimatedOpacity(
+              opacity: _showMenuContent ? 1.0 : 0.0,
+              duration: const Duration(milliseconds: 150),
+              child: Text(text, style: const TextStyle(color: Colors.white)),
+            ),
           ],
         ),
       ),
+    )
     );
   }
 }
