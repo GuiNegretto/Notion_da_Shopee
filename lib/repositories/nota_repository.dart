@@ -24,6 +24,7 @@ class NotaRepository {
       'atualizado_em': now,
       'favorito': favorito ? 1 : 0,
       'prioridade': prioridade,
+      'excluido': 0
     });
 
     // Insere as tags e categorias associadas
@@ -33,7 +34,7 @@ class NotaRepository {
 
   // Método para listar todas as notas com suas tags e categorias
   Future<List<Map<String, dynamic>>> listarNotas() async {
-    final List<Map<String, dynamic>> notasRaw = await db.query('notas', orderBy: 'atualizado_em DESC');
+    final List<Map<String, dynamic>> notasRaw = await db.query('notas', where: 'excluido = ?', whereArgs: ['0'], orderBy: 'atualizado_em DESC');
     
     if (notasRaw.isEmpty) {
       return [];
@@ -89,8 +90,8 @@ class NotaRepository {
 
     // Método para excluir uma nota
     Future<void> excluirNota(int id) async {
-      // ON DELETE CASCADE nas tabelas de associação cuida da exclusão de tags/categorias
-      await db.delete('notas', where: 'id = ?', whereArgs: [id]);
+      
+      await db.update('notas', {'excluido': 1}, where: 'id = ?', whereArgs: [id]);
     }
 
     // --- Novos Métodos para Requisitos Funcionais ---
@@ -111,6 +112,7 @@ class NotaRepository {
     String? termo,
     String? prioridade,
     bool? favorito,
+    bool? excluido,
     String? ordenacao = 'atualizado_em DESC',
   }) async {
     List<String> conditions = [];
@@ -131,6 +133,10 @@ class NotaRepository {
       conditions.add('favorito = ?');
       args.add(favorito ? 1 : 0);
     }
+
+    conditions.add('excluido = ?');
+    args.add(excluido != null ? 1 : 0);
+    
 
     String whereClause = conditions.isNotEmpty ? 'WHERE ${conditions.join(' AND ')}' : '';
     

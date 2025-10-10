@@ -20,6 +20,7 @@ class _ListaNotasPageState extends State<ListaNotasPage> {
 
   String? _filtroPrioridade;
   bool _filtroFavorito = false;
+  bool _filtroExcluido = false;
   String _ordenacao = 'atualizado_em DESC';
   String _currentTitle = 'Minhas Notas';
 
@@ -49,6 +50,7 @@ class _ListaNotasPageState extends State<ListaNotasPage> {
       termo: termo,
       prioridade: _filtroPrioridade == "Todas" ? null : _filtroPrioridade,
       favorito: _filtroFavorito ? true : null,
+      excluido: _filtroExcluido ? true : null,
       ordenacao: _ordenacao,
     );
 
@@ -238,6 +240,7 @@ class _ListaNotasPageState extends State<ListaNotasPage> {
                         onTap: () {
                           setState(() {
                             _filtroFavorito = true;
+                            _filtroExcluido = false;
                             _currentTitle = "Favoritas";
                             _selectedMenuId = "Favoritas";
                             _carregarNotas();
@@ -251,6 +254,7 @@ class _ListaNotasPageState extends State<ListaNotasPage> {
                         onTap: () {
                           setState(() {
                             _filtroFavorito = false;
+                            _filtroExcluido = false;
                             _currentTitle = "Minhas Notas";
                             _selectedMenuId = "Todas as Notas";
                             _carregarNotas();
@@ -263,9 +267,11 @@ class _ListaNotasPageState extends State<ListaNotasPage> {
                         text: 'Lixeira',
                         onTap: () {
                           setState(() {
+                            _filtroFavorito = false;
+                            _filtroExcluido = true;
                             _currentTitle = "Lixeira";
                             _selectedMenuId = "Lixeira";
-                            // TODO: Lógica para exibir notas na lixeira
+                            _carregarNotas();
                           });
                         },
                       ),
