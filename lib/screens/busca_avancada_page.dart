@@ -17,6 +17,7 @@ class _BuscaAvancadaPageState extends State<BuscaAvancadaPage> {
   String? _filtroPrioridade;
   bool _filtroFavorito = false;
   bool _filtroExcluido = false;
+  bool _filtroCategoria = null;
 
   Future<void> _buscarNotas() async {
     setState(() => isLoading = true);
@@ -25,6 +26,7 @@ class _BuscaAvancadaPageState extends State<BuscaAvancadaPage> {
       prioridade: _filtroPrioridade == "Todas" ? null : _filtroPrioridade ,
       favorito: _filtroFavorito ? true : null,
       excluido: _filtroExcluido ? true : null,
+      categoria: _filtroCategoria
     );
     setState(() {
       resultados = resultadosRaw.map((map) => Nota.fromMap(map)).toList();

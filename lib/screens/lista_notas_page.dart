@@ -21,6 +21,7 @@ class _ListaNotasPageState extends State<ListaNotasPage> {
   String? _filtroPrioridade;
   bool _filtroFavorito = false;
   bool _filtroExcluido = false;
+  String _filtroCategoria = '';
   String _ordenacao = 'atualizado_em DESC';
   String _currentTitle = 'Minhas Notas';
 
@@ -51,6 +52,7 @@ class _ListaNotasPageState extends State<ListaNotasPage> {
       prioridade: _filtroPrioridade == "Todas" ? null : _filtroPrioridade,
       favorito: _filtroFavorito ? true : null,
       excluido: _filtroExcluido ? true : null,
+      categoria: _filtroCategoria,
       ordenacao: _ordenacao,
     );
 
@@ -241,6 +243,7 @@ class _ListaNotasPageState extends State<ListaNotasPage> {
                           setState(() {
                             _filtroFavorito = true;
                             _filtroExcluido = false;
+                            _filtroCategoria = '';
                             _currentTitle = "Favoritas";
                             _selectedMenuId = "Favoritas";
                             _carregarNotas();
@@ -255,6 +258,7 @@ class _ListaNotasPageState extends State<ListaNotasPage> {
                           setState(() {
                             _filtroFavorito = false;
                             _filtroExcluido = false;
+                            _filtroCategoria = '';
                             _currentTitle = "Minhas Notas";
                             _selectedMenuId = "Todas as Notas";
                             _carregarNotas();
@@ -269,6 +273,7 @@ class _ListaNotasPageState extends State<ListaNotasPage> {
                           setState(() {
                             _filtroFavorito = false;
                             _filtroExcluido = true;
+                            _filtroCategoria = '';
                             _currentTitle = "Lixeira";
                             _selectedMenuId = "Lixeira";
                             _carregarNotas();
@@ -300,7 +305,12 @@ class _ListaNotasPageState extends State<ListaNotasPage> {
                                   icon: Icons.folder,
                                   text: categoria,
                                   onTap: () {
-                                    // TODO: Implementar filtro por categoria (RF02)
+                                    _filtroFavorito = false;
+                                    _filtroExcluido = false;
+                                    _filtroCategoria = categoria;
+                                    _currentTitle = categoria;
+                                    _selectedMenuId = categoria;
+                                    _carregarNotas();
                                   },
                                 )).toList(),
                                 _buildMenuItem(

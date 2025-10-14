@@ -119,6 +119,7 @@ class NotaRepository {
     String? prioridade,
     bool? favorito,
     bool? excluido,
+    String? categoria,
     String? ordenacao = 'atualizado_em DESC',
   }) async {
     List<String> conditions = [];
@@ -143,10 +144,14 @@ class NotaRepository {
     conditions.add('excluido = ?');
     args.add(excluido != null ? 1 : 0);
     
+    if (categoria != '') {
+      conditions.add('EXISTS (select 1 from nota_categoria nc inner join categorias c on c.id = nc.categoria_id where nc.nota_id = n.id and c.nome = ?)');
+      args.add('$categoria');
+    }
 
     String whereClause = conditions.isNotEmpty ? 'WHERE ${conditions.join(' AND ')}' : '';
     
-    final List<Map<String, dynamic>> notas = await db.rawQuery('SELECT * FROM notas $whereClause ORDER BY $ordenacao', args);
+    final List<Map<String, dynamic>> notas = await db.rawQuery('SELECT * FROM notas n $whereClause ORDER BY $ordenacao', args);
     
     return notas;
   }
