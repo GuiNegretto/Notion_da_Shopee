@@ -384,11 +384,14 @@ class _ListaNotasPageState extends State<ListaNotasPage> {
                           ),
                           trailing: IconButton(
                             icon: Icon(
-                              nota.favorito ? Icons.favorite : Icons.favorite_border,
-                              color: nota.favorito ? Colors.red : null,
+                              nota.excluido ? Icons.restore_page : nota.favorito ? Icons.favorite : Icons.favorite_border,
+                              color: !nota.excluido && nota.favorito ? Colors.red : null,
                             ),
                             onPressed: () async {
-                              await widget.notaRepository.marcarNotaComoFavorita(nota.id!, !nota.favorito);
+                              if (nota.excluido)
+                                await widget.notaRepository.restaurarNota(nota.id!);
+                              else
+                                await widget.notaRepository.marcarNotaComoFavorita(nota.id!, !nota.favorito);
                               await _carregarNotas();
                             },
                           ),

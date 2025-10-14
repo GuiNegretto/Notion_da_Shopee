@@ -106,6 +106,12 @@ class NotaRepository {
       await db.update('notas', {'prioridade': prioridade}, where: 'id = ?', whereArgs: [id]);
     }
 
+    // Método para restaurar uma nota
+    Future<void> restaurarNota(int id) async {
+      
+      await db.update('notas', {'excluido': 0}, where: 'id = ?', whereArgs: [id]);
+    }
+
     // RF03 - Buscar Notas (implementação básica)
 
   Future<List<Map<String, dynamic>>> buscarNotas({
