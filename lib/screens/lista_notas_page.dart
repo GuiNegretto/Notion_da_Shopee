@@ -405,7 +405,7 @@ class _ListaNotasPageState extends State<ListaNotasPage> {
                               await _carregarNotas();
                             },
                           ),
-                          onTap: () => _abrirNota(nota: nota),
+                          onTap: () => nota.excluido ? Null : _abrirNota(nota: nota) ,
                         ),
                       );
                     },
