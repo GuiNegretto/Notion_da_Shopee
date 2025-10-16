@@ -4,6 +4,7 @@ import '../repositories/categoria_repository.dart';
 import '../models/nota.dart';
 import 'nota_page.dart';
 import 'gerenciar_categorias_page.dart';
+import 'configuracoes_page.dart';
 
 class ListaNotasPage extends StatefulWidget {
   final NotaRepository notaRepository;
@@ -85,6 +86,15 @@ class _ListaNotasPageState extends State<ListaNotasPage> {
     setState(() {});
   }
 
+  Future<void> _navegarConfiguracoes() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const ConfiguracoesPage(),
+      ),
+    );
+  }
+
   void _abrirFiltrosModal() {
     showModalBottomSheet(
       context: context,
@@ -158,18 +168,27 @@ class _ListaNotasPageState extends State<ListaNotasPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final menuColor = theme.brightness == Brightness.dark 
+        ? Colors.black26 
+        : Colors.grey;
+    
     return Scaffold(
       body: Row(
         children: [
           AnimatedContainer(
             duration: const Duration(milliseconds: 300),
             width: _isMenuExpanded ? _menuWidth : 60,
-            color: Colors.black26,
+            color: menuColor,
             child: Column(
               children: [
                 if (_isMenuExpanded)
                   DrawerHeader(
-                    decoration: const BoxDecoration(color: Color.fromRGBO(241, 242, 242, 100)),
+                    decoration: BoxDecoration(
+                      color: theme.brightness == Brightness.dark 
+                          ? const Color.fromRGBO(241, 242, 242, 100) 
+                          : const Color.fromRGBO(241, 242, 242, 100) , // ainda na duvida da cor
+                    ),
                     child: Padding(
                       padding: const EdgeInsets.all(8.0),
                       child: Image.asset(
@@ -231,7 +250,7 @@ class _ListaNotasPageState extends State<ListaNotasPage> {
                         id: "Configurações",
                         icon: Icons.settings,
                         text: 'Configurações',
-                        onTap: () {},
+                        onTap: _navegarConfiguracoes,
                       ),
                       const Divider(color: Colors.white),
                       
@@ -305,12 +324,14 @@ class _ListaNotasPageState extends State<ListaNotasPage> {
                                   icon: Icons.folder,
                                   text: categoria,
                                   onTap: () {
-                                    _filtroFavorito = false;
-                                    _filtroExcluido = false;
-                                    _filtroCategoria = categoria;
-                                    _currentTitle = categoria;
-                                    _selectedMenuId = categoria;
-                                    _carregarNotas();
+                                    setState(() {
+                                      _filtroFavorito = false;
+                                      _filtroExcluido = false;
+                                      _filtroCategoria = categoria;
+                                      _currentTitle = categoria;
+                                      _selectedMenuId = categoria;
+                                      _carregarNotas();
+                                    });
                                   },
                                 )).toList(),
                                 _buildMenuItem(
@@ -329,7 +350,6 @@ class _ListaNotasPageState extends State<ListaNotasPage> {
                       
                     ],
                   )
-                  // Estado de Loading/Minimizado
                       : Center(
                           child: _isMenuExpanded ? const CircularProgressIndicator(color: Colors.white) : const SizedBox(),
                         ),
@@ -362,6 +382,9 @@ class _ListaNotasPageState extends State<ListaNotasPage> {
                         borderSide: BorderSide.none,
                       ),
                       filled: true,
+                      fillColor: theme.brightness == Brightness.dark 
+                          ? Colors.grey[800] 
+                          : Colors.grey[200],
                     ),
                   ),
                 ),
@@ -402,6 +425,7 @@ class _ListaNotasPageState extends State<ListaNotasPage> {
                                 await widget.notaRepository.restaurarNota(nota.id!);
                               else
                                 await widget.notaRepository.marcarNotaComoFavorita(nota.id!, !nota.favorito);
+
                               await _carregarNotas();
                             },
                           ),
@@ -428,28 +452,26 @@ class _ListaNotasPageState extends State<ListaNotasPage> {
     final bool isSelected = _selectedMenuId == id;
     final Color highlightColor = isSelected ? Colors.white12 : Colors.transparent;
 
-
     return InkWell(
       onTap: onTap,
       child: Container(
-          color: highlightColor,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: 
-        Row(
-          children: [
-            Icon(icon, color: Colors.white),
-            if (_isMenuExpanded) const SizedBox(width: 16),
-            if (_isMenuExpanded)
-            AnimatedOpacity(
-              opacity: _showMenuContent ? 1.0 : 0.0,
-              duration: const Duration(milliseconds: 150),
-              child: Text(text, style: const TextStyle(color: Colors.white)),
-            ),
-          ],
+        color: highlightColor,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            children: [
+              Icon(icon, color: Colors.white),
+              if (_isMenuExpanded) const SizedBox(width: 16),
+              if (_isMenuExpanded)
+              AnimatedOpacity(
+                opacity: _showMenuContent ? 1.0 : 0.0,
+                duration: const Duration(milliseconds: 150),
+                child: Text(text, style: const TextStyle(color: Colors.white)),
+              ),
+            ],
+          ),
         ),
       ),
-    )
     );
   }
 }

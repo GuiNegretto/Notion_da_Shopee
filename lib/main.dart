@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'data/database.dart';
 import 'repositories/nota_repository.dart';
 import 'repositories/categoria_repository.dart';
 import 'repositories/tag_repository.dart';
 import 'screens/lista_notas_page.dart';
+import 'providers/theme_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -12,8 +14,17 @@ void main() async {
   final tagRepository = TagRepository(db);
   final notaRepository = NotaRepository(db, categoriaRepository, tagRepository);
 
-  runApp(MyApp(notaRepository: notaRepository, categoriaRepository: categoriaRepository));
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => ThemeProvider(),
+      child: MyApp(
+        notaRepository: notaRepository,
+        categoriaRepository: categoriaRepository,
+      ),
+    ),
+  );
 }
+// ... código anterior
 
 class MyApp extends StatelessWidget {
   final NotaRepository notaRepository;
@@ -22,9 +33,13 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+
     return MaterialApp(
       title: 'Notion da Shopee',
-      theme: ThemeData(
+      themeMode: themeProvider.themeMode,
+      // Tema Escuro
+      darkTheme: ThemeData(
         brightness: Brightness.dark,
         primaryColor: Colors.grey[850],
         scaffoldBackgroundColor: Colors.grey[900],
@@ -35,8 +50,34 @@ class MyApp extends StatelessWidget {
         floatingActionButtonTheme: const FloatingActionButtonThemeData(
           backgroundColor: Colors.blueAccent,
         ),
+        // CORREÇÃO AQUI: Use CardThemeData
+        cardTheme: CardThemeData(
+          color: Colors.grey[850],
+        ),
       ),
-      home: ListaNotasPage(notaRepository: notaRepository, categoriaRepository: categoriaRepository),
+      // Tema Claro
+      theme: ThemeData(
+        brightness: Brightness.light,
+        primaryColor: Colors.grey,
+        scaffoldBackgroundColor: Colors.grey[50],
+        appBarTheme: AppBarTheme(
+          backgroundColor: Colors.grey,
+          elevation: 0,
+          foregroundColor: Colors.white,
+        ),
+        floatingActionButtonTheme: const FloatingActionButtonThemeData(
+          backgroundColor: Colors.grey,
+        ),
+        // CORREÇÃO AQUI: Use CardThemeData
+        cardTheme: CardThemeData( 
+          color: Colors.white,
+          elevation: 2,
+        ),
+      ),
+      home: ListaNotasPage(
+        notaRepository: notaRepository,
+        categoriaRepository: categoriaRepository,
+      ),
     );
   }
 }
