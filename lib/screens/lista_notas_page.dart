@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../repositories/nota_repository.dart';
 import '../repositories/categoria_repository.dart';
 import '../models/nota.dart';
+import '../utils/file.dart';
 import 'nota_page.dart';
 import 'gerenciar_categorias_page.dart';
 import 'configuracoes_page.dart';
@@ -236,15 +237,36 @@ class _ListaNotasPageState extends State<ListaNotasPage> {
                       ),
                       _buildMenuItem(
                         id: "Importar",
-                        icon: Icons.file_upload,
+                        icon: Icons.file_download,
                         text: 'Importar',
-                        onTap: () {},
+                        onTap: () async {
+                          await lerJsonComDialogo();
+                          setState(() {
+                            _filtroFavorito = false;
+                            _filtroExcluido = false;
+                            _filtroCategoria = '';
+                            _currentTitle = "Minhas Notas";
+                            _selectedMenuId = "Todas as Notas";
+                            _carregarNotas();
+                          });
+                        },
                       ),
                       _buildMenuItem(
                         id: "Exportar",
-                        icon: Icons.file_download,
+                        icon: Icons.file_upload,
                         text: 'Exportar',
-                        onTap: () {},
+                        onTap: () async {
+                          final listaNotas = await widget.notaRepository.buscarNotas(
+                            termo: "",
+                            prioridade: null,
+                            favorito: null,
+                            excluido: null,
+                            categoria: '',
+                            ordenacao: null,
+                          );
+
+                          salvarJsonComDialogo(listaNotas.map((map) => Nota.fromMap(map)).toList());
+                        },
                       ),
                       _buildMenuItem(
                         id: "Configurações",
@@ -254,21 +276,6 @@ class _ListaNotasPageState extends State<ListaNotasPage> {
                       ),
                       const Divider(color: Colors.white),
                       
-                      _buildMenuItem(
-                        id: 'Favoritas',
-                        icon: Icons.star,
-                        text: 'Favoritas',
-                        onTap: () {
-                          setState(() {
-                            _filtroFavorito = true;
-                            _filtroExcluido = false;
-                            _filtroCategoria = '';
-                            _currentTitle = "Favoritas";
-                            _selectedMenuId = "Favoritas";
-                            _carregarNotas();
-                          });
-                        },
-                      ),
                       _buildMenuItem(
                         id: 'Todas as Notas',
                         icon: Icons.description,
@@ -280,6 +287,21 @@ class _ListaNotasPageState extends State<ListaNotasPage> {
                             _filtroCategoria = '';
                             _currentTitle = "Minhas Notas";
                             _selectedMenuId = "Todas as Notas";
+                            _carregarNotas();
+                          });
+                        },
+                      ),
+                      _buildMenuItem(
+                        id: 'Favoritas',
+                        icon: Icons.star,
+                        text: 'Favoritas',
+                        onTap: () {
+                          setState(() {
+                            _filtroFavorito = true;
+                            _filtroExcluido = false;
+                            _filtroCategoria = '';
+                            _currentTitle = "Favoritas";
+                            _selectedMenuId = "Favoritas";
                             _carregarNotas();
                           });
                         },
