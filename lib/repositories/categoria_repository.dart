@@ -23,7 +23,14 @@ class CategoriaRepository {
     if (resultado.isNotEmpty) {
       return resultado.first['id'];
     } else {
-      return await db.insert('categorias', {'nome': nome});
+      dynamic id = await db.insert('categorias', {'nome': nome}, conflictAlgorithm: ConflictAlgorithm.ignore);
+
+      if (id == 0) {
+        final List<Map<String, dynamic>> res = await db.query('categorias', where: 'nome = ?', whereArgs: [nome]);
+        id = res.first['id'];
+      }
+
+      return id;
     }
   }
   

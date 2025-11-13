@@ -22,7 +22,13 @@ class TagRepository {
     if (resultado.isNotEmpty) {
       return resultado.first['id'];
     } else {
-      return await db.insert('tags', {'nome': nome});
+      dynamic id = await db.insert('tags', {'nome': nome}, conflictAlgorithm: ConflictAlgorithm.ignore);
+      if (id == 0) {
+        final List<Map<String, dynamic>> res = await db.query('tags', where: 'nome = ?', whereArgs: [nome]);
+        id = res.first['id'];
+      }
+
+      return id;
     }
   }
 
