@@ -241,14 +241,12 @@ class _ListaNotasPageState extends State<ListaNotasPage> {
                   DrawerHeader(
                     decoration: BoxDecoration(
                       color: theme.brightness == Brightness.dark 
-                          ? const Color.fromRGBO(241, 242, 242, 100) 
-                          : const Color.fromRGBO(241, 242, 242, 100) , // ainda na duvida da cor
+                          ? const Color.fromRGBO(25, 25, 25, 100) 
+                          : const Color.fromRGBO(25, 25, 25, 100),
                     ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
+                    child: Center(
                       child: Image.asset(
                         'assets/images/logo.png',
-                        fit: BoxFit.contain,
                       ),
                     ),
                   )
