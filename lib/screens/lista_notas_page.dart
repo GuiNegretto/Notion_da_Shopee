@@ -7,6 +7,7 @@ import 'nota_page.dart';
 import 'gerenciar_categorias_page.dart';
 import 'configuracoes_page.dart';
 import 'busca_avancada_page.dart';
+import 'importacao_page.dart';
 
 class ListaNotasPage extends StatefulWidget {
   final NotaRepository notaRepository;
@@ -192,6 +193,18 @@ class _ListaNotasPageState extends State<ListaNotasPage> {
     );
   }
 
+  Future<void> _navegarImportacao({Nota? nota}) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ImportacaoConcluidaPage(),
+      ),
+    );
+    _carregarNotas();
+    _carregarCategorias();
+    setState(() {});
+  }
+
   Future<void> _abrirFiltrosAvancados() async {
     final filtrosAtualizados = await Navigator.push<FiltrosAvancados>(
       context,
@@ -284,15 +297,9 @@ class _ListaNotasPageState extends State<ListaNotasPage> {
                         icon: Icons.file_download,
                         text: 'Importar',
                         onTap: () async {
-                          await lerJsonComDialogo();
-                          setState(() {
-                            _filtros = FiltrosAvancados();
-                            _filtroExcluido = false;
-                            _filtroCategoria = '';
-                            _currentTitle = "Minhas Notas";
-                            _selectedMenuId = "Todas as Notas";
-                          });
-                          _carregarNotas(resetarScroll: true);
+                          final res = await lerJsonComDialogo();
+                          if (res)
+                            await _navegarImportacao();
                         },
                       ),
                       _buildMenuItem(
@@ -301,8 +308,9 @@ class _ListaNotasPageState extends State<ListaNotasPage> {
                         text: 'Exportar',
                         onTap: () async {
                           final listaNotas = await widget.notaRepository.listarNotas();
-
-                          salvarJsonComDialogo(listaNotas);
+                          final res = await salvarJsonComDialogo(listaNotas);
+                          if (res)
+                            _showPopupExportacao(context);
                         },
                       ),
                       _buildMenuItem(
@@ -559,6 +567,26 @@ class _ListaNotasPageState extends State<ListaNotasPage> {
           ),
         ),
       ),
+    );
+  }
+
+  void _showPopupExportacao(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Exportação Concluída'),
+          content: const Text('A exportação foi concluída com sucesso!'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
     );
   }
 }

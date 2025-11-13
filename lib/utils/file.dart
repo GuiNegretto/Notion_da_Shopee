@@ -7,7 +7,7 @@ import '../repositories/nota_repository.dart';
 import '../repositories/tag_repository.dart';
 import '../repositories/categoria_repository.dart';
 
-Future<void> salvarJsonComDialogo(List<Map<String, dynamic>> notas) async {
+Future<bool> salvarJsonComDialogo(List<Map<String, dynamic>> notas) async {
   String jsonString = jsonEncode(
     notas.map((nota) {
       dynamic n = nota;
@@ -28,7 +28,7 @@ Future<void> salvarJsonComDialogo(List<Map<String, dynamic>> notas) async {
   );
 
   if (caminhoSelecionado == null) {
-    return;
+    return false;
   }
 
   try {
@@ -39,12 +39,14 @@ Future<void> salvarJsonComDialogo(List<Map<String, dynamic>> notas) async {
     final File arquivo = File(caminhoSelecionado);
     await arquivo.writeAsString(jsonString);
 
+    return true;
   } catch (e) {
     print('Erro ao salvar o JSON: $e');
+    return false;
   }
 }
 
-Future<void> lerJsonComDialogo() async {
+Future<bool> lerJsonComDialogo() async {
   FilePickerResult? resultado = await FilePicker.platform.pickFiles(
     dialogTitle: 'Selecione o arquivo JSON de Lista',
     type: FileType.custom,
@@ -53,14 +55,14 @@ Future<void> lerJsonComDialogo() async {
   );
 
   if (resultado == null) {
-    return;
+    return false;
   }
 
   try {
     String? caminhoArquivo = resultado.files.single.path;
     
     if (caminhoArquivo == null) {
-        return;
+        return false;
     }
 
     final File arquivo = File(caminhoArquivo);
@@ -86,12 +88,17 @@ Future<void> lerJsonComDialogo() async {
           categorias: dado["categorias"].whereType<String>().toList()
         );
       });
+
+      return true;
       
     } else {
       print(conteudoJson);
     }    
 
+    return false;
+
   } catch (e) {
     print("ERRO ao ler ou processar o arquivo JSON: $e");
+    return false;
   }
 }

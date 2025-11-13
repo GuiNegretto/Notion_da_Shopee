@@ -6,6 +6,8 @@ class CategoriaRepository {
   CategoriaRepository(this.db);
 
   Future<List<String>> listarTodasCategorias() async {
+    await db.rawQuery('PRAGMA read_uncommitted = 1;');
+    
     final List<Map<String, dynamic>> resultado = await db.query('categorias');
     return resultado.map((e) => e['nome'] as String).toList();
   }
@@ -19,6 +21,8 @@ class CategoriaRepository {
   }
 
   Future<int> obterOuCriarCategoria(String nome) async {
+    await db.rawQuery('PRAGMA read_uncommitted = 1;');
+    
     final List<Map<String, dynamic>> resultado = await db.query('categorias', where: 'nome = ?', whereArgs: [nome]);
     if (resultado.isNotEmpty) {
       return resultado.first['id'];
@@ -35,6 +39,8 @@ class CategoriaRepository {
   }
   
   Future<List<String>> buscarCategoriasPorNota(int notaId) async {
+    await db.rawQuery('PRAGMA read_uncommitted = 1;');
+
     final List<Map<String, dynamic>> resultado = await db.rawQuery('''
       SELECT c.nome FROM categorias c
       INNER JOIN nota_categoria nc ON c.id = nc.categoria_id
@@ -44,6 +50,8 @@ class CategoriaRepository {
   }
 
   Future<List<String>> buscarCategoriasUnicas() async {
+    await db.rawQuery('PRAGMA read_uncommitted = 1;');
+    
     final List<Map<String, dynamic>> categoriasRaw = await db.query('categorias');
     return categoriasRaw.map((e) => e['nome'] as String).toList();
   }

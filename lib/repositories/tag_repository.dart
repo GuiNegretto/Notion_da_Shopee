@@ -6,6 +6,8 @@ class TagRepository {
   TagRepository(this.db);
 
   Future<List<String>> listarTodasTags() async {
+    await db.rawQuery('PRAGMA read_uncommitted = 1;');
+    
     final List<Map<String, dynamic>> resultado = await db.query('tags');
     return resultado.map((e) => e['nome'] as String).toList();
   }
@@ -18,6 +20,8 @@ class TagRepository {
   }
 
   Future<int> obterOuCriarTag(String nome) async {
+    await db.rawQuery('PRAGMA read_uncommitted = 1;');
+    
     final List<Map<String, dynamic>> resultado = await db.query('tags', where: 'nome = ?', whereArgs: [nome]);
     if (resultado.isNotEmpty) {
       return resultado.first['id'];
@@ -33,6 +37,8 @@ class TagRepository {
   }
 
   Future<List<String>> buscarTagsPorNota(int notaId) async {
+    await db.rawQuery('PRAGMA read_uncommitted = 1;');
+    
     final List<Map<String, dynamic>> resultado = await db.rawQuery('''
       SELECT t.nome FROM tags t
       INNER JOIN nota_tag nt ON t.id = nt.tag_id

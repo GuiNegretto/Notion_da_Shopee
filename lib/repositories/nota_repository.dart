@@ -34,6 +34,8 @@ class NotaRepository {
 
   // Método para listar todas as notas com suas tags e categorias
   Future<List<Map<String, dynamic>>> listarNotas() async {
+    await db.rawQuery('PRAGMA read_uncommitted = 1;');
+    
     final List<Map<String, dynamic>> notasRaw = await db.query('notas', where: 'excluido = ?', whereArgs: ['0'], orderBy: 'atualizado_em DESC');
     
     if (notasRaw.isEmpty) {
@@ -151,6 +153,7 @@ class NotaRepository {
 
     String whereClause = conditions.isNotEmpty ? 'WHERE ${conditions.join(' AND ')}' : '';
     
+    await db.rawQuery('PRAGMA read_uncommitted = 1;');
     final List<Map<String, dynamic>> notas = await db.rawQuery('SELECT * FROM notas n $whereClause ORDER BY $ordenacao', args);
     
     return notas;
