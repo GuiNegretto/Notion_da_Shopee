@@ -37,6 +37,8 @@ class _GerenciarCategoriasPageState extends State<GerenciarCategoriasPage> {
         content: TextField(
           controller: nomeController,
           decoration: const InputDecoration(labelText: 'Nome'),
+          autofocus: true,
+          textCapitalization: TextCapitalization.sentences,
         ),
         actions: [
           TextButton(
@@ -45,10 +47,12 @@ class _GerenciarCategoriasPageState extends State<GerenciarCategoriasPage> {
           ),
           ElevatedButton(
             onPressed: () async {
-              if (nomeController.text.isNotEmpty) {
-                await widget.categoriaRepository.adicionarCategoria(nomeController.text);
-                Navigator.pop(context);
-                _carregarCategorias();
+              if (nomeController.text.trim().isNotEmpty) {
+                await widget.categoriaRepository.adicionarCategoria(nomeController.text.trim());
+                if (mounted) {
+                  Navigator.pop(context);
+                  _carregarCategorias();
+                }
               }
             },
             child: const Text('Adicionar'),
@@ -59,9 +63,53 @@ class _GerenciarCategoriasPageState extends State<GerenciarCategoriasPage> {
   }
 
   Future<void> _excluirCategoria(String categoria) async {
-    // Adicionar um diálogo de confirmação aqui
-    await widget.categoriaRepository.excluirCategoria(categoria);
-    _carregarCategorias();
+    // Diálogo de confirmação
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirmar Exclusão'),
+        content: Text('Deseja realmente excluir a categoria "$categoria"?\n\nEsta ação removerá a categoria de todas as notas associadas.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.grey,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Excluir'),
+          ),
+        ],
+      ),
+    );
+
+    // Se confirmou, exclui a categoria
+    if (confirmar == true) {
+      try {
+        await widget.categoriaRepository.excluirCategoria(categoria);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Categoria "$categoria" excluída com sucesso'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          _carregarCategorias();
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Erro ao excluir categoria: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
   }
 
   @override
@@ -76,20 +124,62 @@ class _GerenciarCategoriasPageState extends State<GerenciarCategoriasPage> {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
-          if (snapshot.hasError || !snapshot.hasData) {
-            return const Center(child: Text('Erro ao carregar categorias.'));
+          if (snapshot.hasError) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, size: 48, color: Colors.grey),
+                  const SizedBox(height: 16),
+                  Text('Erro ao carregar categorias: ${snapshot.error}'),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: _carregarCategorias,
+                    child: const Text('Tentar Novamente'),
+                  ),
+                ],
+              ),
+            );
           }
+          if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.folder_off, size: 64, color: Colors.grey),
+                  SizedBox(height: 16),
+                  Text(
+                    'Nenhuma categoria criada',
+                    style: TextStyle(fontSize: 18, color: Colors.grey),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    'Toque no botão + para adicionar',
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                ],
+              ),
+            );
+          }
+          
           final categorias = snapshot.data!;
           return ListView.builder(
             itemCount: categorias.length,
             itemBuilder: (context, index) {
               final categoria = categorias[index];
-              return ListTile(
-                leading: const Icon(Icons.folder),
-                title: Text(categoria),
-                trailing: IconButton(
-                  icon: const Icon(Icons.delete),
-                  onPressed: () => _excluirCategoria(categoria),
+              return Card(
+                margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                child: ListTile(
+                  leading: const Icon(Icons.folder, color: Colors.blue),
+                  title: Text(
+                    categoria,
+                    style: const TextStyle(fontWeight: FontWeight.w500),
+                  ),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.delete, color: Colors.grey),
+                    tooltip: 'Excluir categoria',
+                    onPressed: () => _excluirCategoria(categoria),
+                  ),
                 ),
               );
             },
@@ -98,6 +188,7 @@ class _GerenciarCategoriasPageState extends State<GerenciarCategoriasPage> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _adicionarCategoria,
+        tooltip: 'Adicionar categoria',
         child: const Icon(Icons.add),
       ),
     );

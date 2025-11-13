@@ -54,12 +54,12 @@ class CategoriaRepository {
     );
   }
 
-  Future<void> excluirCategoria(String id) async {
+  Future<void> excluirCategoria(String nome) async {
     // A exclusão de notas associadas será gerenciada pelas chaves estrangeiras
     await db.delete(
       'categorias',
-      where: 'id = ?',
-      whereArgs: [id],
+      where: 'nome = ?',
+      whereArgs: [nome],
     );
   }
 }

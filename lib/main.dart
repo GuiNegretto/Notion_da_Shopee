@@ -54,6 +54,12 @@ class MyApp extends StatelessWidget {
         cardTheme: CardThemeData(
           color: Colors.grey[850],
         ),
+
+    chipTheme: ChipThemeData(
+    backgroundColor: Colors.blue.shade900,
+    labelStyle: TextStyle(color: Colors.blue.shade100),
+    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+  ),
       ),
       // Tema Claro
       theme: ThemeData(
@@ -73,6 +79,12 @@ class MyApp extends StatelessWidget {
           color: Colors.white,
           elevation: 2,
         ),
+
+          chipTheme: ChipThemeData(
+    backgroundColor: Colors.blue.shade50,
+    labelStyle: TextStyle(color: Colors.blue.shade900),
+    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+  ),
       ),
       home: ListaNotasPage(
         notaRepository: notaRepository,

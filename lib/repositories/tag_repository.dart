@@ -34,4 +34,17 @@ class TagRepository {
     ''', [notaId]);
     return resultado.map((e) => e['nome'] as String).toList();
   }
+
+  Future<void> adicionarTagNaNota(int notaId, String nomeTag) async {
+    final tagId = await obterOuCriarTag(nomeTag);
+    await db.insert('nota_tag', {'nota_id': notaId, 'tag_id': tagId},
+        conflictAlgorithm: ConflictAlgorithm.ignore);
+  }
+
+  Future<void> removerTagDaNota(int notaId, String nomeTag) async {
+    final List<Map<String, dynamic>> resultado = await db.query('tags', where: 'nome = ?', whereArgs: [nomeTag]);
+    if (resultado.isEmpty) return;
+    final tagId = resultado.first['id'] as int;
+    await db.delete('nota_tag', where: 'nota_id = ? AND tag_id = ?', whereArgs: [notaId, tagId]);
+  }
 }

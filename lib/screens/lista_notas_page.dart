@@ -6,6 +6,7 @@ import '../utils/file.dart';
 import 'nota_page.dart';
 import 'gerenciar_categorias_page.dart';
 import 'configuracoes_page.dart';
+import 'busca_avancada_page.dart';
 
 class ListaNotasPage extends StatefulWidget {
   final NotaRepository notaRepository;
@@ -19,12 +20,12 @@ class ListaNotasPage extends StatefulWidget {
 class _ListaNotasPageState extends State<ListaNotasPage> {
   List<Nota> notas = [];
   final _searchController = TextEditingController();
+  final _scrollController = ScrollController();
+  final _menuScrollController = ScrollController();
 
-  String? _filtroPrioridade;
-  bool _filtroFavorito = false;
+  FiltrosAvancados _filtros = FiltrosAvancados();
   bool _filtroExcluido = false;
   String _filtroCategoria = '';
-  String _ordenacao = 'atualizado_em DESC';
   String _currentTitle = 'Minhas Notas';
 
   bool _isMenuExpanded = true;
@@ -32,39 +33,131 @@ class _ListaNotasPageState extends State<ListaNotasPage> {
 
   bool _showMenuContent = true; 
 
-  String _selectedMenuId = 'Todas as Notas'; 
+  String _selectedMenuId = 'Todas as Notas';
+  
+  List<String> _categorias = []; 
 
   @override
   void initState() {
     super.initState();
     _carregarNotas();
+    _carregarCategorias();
     _searchController.addListener(_filtrarNotas);
   }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _scrollController.dispose();
+    _menuScrollController.dispose();
     super.dispose();
   }
 
-  Future<void> _carregarNotas() async {
-    final termo = _searchController.text;
-    final lista = await widget.notaRepository.buscarNotas(
-      termo: termo,
-      prioridade: _filtroPrioridade == "Todas" ? null : _filtroPrioridade,
-      favorito: _filtroFavorito ? true : null,
-      excluido: _filtroExcluido ? true : null,
-      categoria: _filtroCategoria,
-      ordenacao: _ordenacao,
-    );
+  Future<void> _carregarNotas({bool resetarScroll = false}) async {
+    final termo = _searchController.text.trim();
+    
+    // Verifica busca exclusiva por tags (qnd começa com #)
+    final bool buscaExclusivaPorTag = termo.startsWith('#');
+    final String termoLimpo = buscaExclusivaPorTag ? termo.substring(1) : termo;
+    
+    List<Nota> notasEncontradas = [];
+    
+    if (buscaExclusivaPorTag) {
+      // Busca APENAS por tags
+      if (termoLimpo.isNotEmpty) {
+        notasEncontradas = await _buscarNotasPorTag(termoLimpo);
+      }
+    } else {
+      // Busca normal (por título e conteúdo)
+      final lista = await widget.notaRepository.buscarNotas(
+        termo: termo,
+        prioridade: _filtros.prioridade == "Todas" ? null : _filtros.prioridade,
+        favorito: _filtros.favorito ? true : null,
+        excluido: _filtroExcluido ? true : null,
+        categoria: _filtroCategoria,
+        ordenacao: _filtros.ordenacao,
+      );
+
+      // Converte para objetos Nota
+      notasEncontradas = lista.map((map) => Nota.fromMap(map)).toList();
+      
+      // Se houver termo de busca, também busca por tags
+      if (termo.isNotEmpty) {
+        final notasPorTag = await _buscarNotasPorTag(termo);
+        
+        // Combina os resultados, evitar duplicidade
+        final idsEncontrados = notasEncontradas.map((n) => n.id).toSet();
+        for (var nota in notasPorTag) {
+          if (!idsEncontrados.contains(nota.id)) {
+            notasEncontradas.add(nota);
+          }
+        }
+      }
+    }
 
     setState(() {
-      notas = lista.map((map) => Nota.fromMap(map)).toList();
+      notas = notasEncontradas;
     });
+    
+    // Reseta o scroll se solicitado
+    if (resetarScroll && _scrollController.hasClients) {
+      _scrollController.jumpTo(0);
+    }
+    
+    // Carrega as tags para cada nota
+    for (var n in notas) {
+      if (n.id != null) {
+        final tags = await widget.notaRepository.tagRepository.buscarTagsPorNota(n.id!);
+        setState(() {
+          n.tags = tags;
+        });
+      }
+    }
+  }
+
+  // Função para buscar notas que contenham uma tag específica
+  Future<List<Nota>> _buscarNotasPorTag(String termo) async {
+    final termoLower = termo.toLowerCase();
+    
+    // Busca todas as notas (respeitando os filtros atuais)
+    final todasNotas = await widget.notaRepository.buscarNotas(
+      termo: "",
+      prioridade: _filtros.prioridade == "Todas" ? null : _filtros.prioridade,
+      favorito: _filtros.favorito ? true : null,
+      excluido: _filtroExcluido ? true : null,
+      categoria: _filtroCategoria,
+      ordenacao: _filtros.ordenacao,
+    );
+
+    List<Nota> notasComTag = [];
+    
+    for (var notaMap in todasNotas) {
+      final nota = Nota.fromMap(notaMap);
+      if (nota.id != null) {
+        final tags = await widget.notaRepository.tagRepository.buscarTagsPorNota(nota.id!);
+        nota.tags = tags;
+        
+        // Verifica se alguma tag contém o termo
+        if (tags.any((tag) => tag.toLowerCase().contains(termoLower))) {
+          notasComTag.add(nota);
+        }
+      }
+    }
+    
+    return notasComTag;
   }
 
   void _filtrarNotas() {
     _carregarNotas();
+  }
+
+  Future<void> _carregarCategorias() async {
+    final categorias = await widget.categoriaRepository.buscarCategoriasUnicas();
+    if (mounted) {
+      setState(() {
+        _categorias = categorias;
+      });
+    }
   }
 
   Future<void> _abrirNota({Nota? nota}) async {
@@ -84,6 +177,7 @@ class _ListaNotasPageState extends State<ListaNotasPage> {
         builder: (context) => GerenciarCategoriasPage(notaRepository: widget.notaRepository, categoriaRepository: widget.categoriaRepository),
       ),
     );
+    _carregarCategorias();
     setState(() {});
   }
 
@@ -96,75 +190,20 @@ class _ListaNotasPageState extends State<ListaNotasPage> {
     );
   }
 
-  void _abrirFiltrosModal() {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (BuildContext context, StateSetter setStateModal) {
-            return SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text('Filtros Avançados', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                    const Divider(),
-                    const Text('Prioridade', style: TextStyle(fontWeight: FontWeight.bold)),
-                    DropdownButton<String>(
-                      isExpanded: true,
-                      value: _filtroPrioridade,
-                      hint: const Text('Filtrar por prioridade'),
-                      items: <String>['Alta', 'Média', 'Baixa', 'Todas']
-                          .map((String value) => DropdownMenuItem(value: value, child: Text(value)))
-                          .toList(),
-                      onChanged: (String? newValue) {
-                        setStateModal(() {
-                          _filtroPrioridade = newValue;
-                        });
-                        _carregarNotas();
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Checkbox(
-                          value: _filtroFavorito,
-                          onChanged: (bool? value) {
-                            setStateModal(() {
-                              _filtroFavorito = value ?? false;
-                            });
-                            _carregarNotas();
-                          },
-                        ),
-                        const Text('Apenas Favoritas'),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    const Text('Ordenar por', style: TextStyle(fontWeight: FontWeight.bold)),
-                    DropdownButton<String>(
-                      isExpanded: true,
-                      value: _ordenacao,
-                      items: <DropdownMenuItem<String>>[
-                        const DropdownMenuItem(value: 'atualizado_em DESC', child: Text('Mais Recentes')),
-                        const DropdownMenuItem(value: 'atualizado_em ASC', child: Text('Mais Antigas')),
-                      ],
-                      onChanged: (String? newValue) {
-                        setStateModal(() {
-                          _ordenacao = newValue!;
-                        });
-                        _carregarNotas();
-                      },
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
+  Future<void> _abrirFiltrosAvancados() async {
+    final filtrosAtualizados = await Navigator.push<FiltrosAvancados>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => BuscaAvancadaPage(filtrosAtuais: _filtros),
+      ),
     );
+
+    if (filtrosAtualizados != null) {
+      setState(() {
+        _filtros = filtrosAtualizados;
+      });
+      _carregarNotas();
+    }
   }
 
   @override
@@ -225,7 +264,10 @@ class _ListaNotasPageState extends State<ListaNotasPage> {
                 Expanded(
                   child: _showMenuContent || !_isMenuExpanded
                       ? ListView(
+                    key: const PageStorageKey<String>('menuListView'),
+                    controller: _menuScrollController,
                     padding: EdgeInsets.zero,
+                    physics: const ClampingScrollPhysics(),
                     children: [
                       _buildMenuItem(
                         id: "Nova Nota",
@@ -242,13 +284,13 @@ class _ListaNotasPageState extends State<ListaNotasPage> {
                         onTap: () async {
                           await lerJsonComDialogo();
                           setState(() {
-                            _filtroFavorito = false;
+                            _filtros = FiltrosAvancados();
                             _filtroExcluido = false;
                             _filtroCategoria = '';
                             _currentTitle = "Minhas Notas";
                             _selectedMenuId = "Todas as Notas";
-                            _carregarNotas();
                           });
+                          _carregarNotas(resetarScroll: true);
                         },
                       ),
                       _buildMenuItem(
@@ -282,13 +324,13 @@ class _ListaNotasPageState extends State<ListaNotasPage> {
                         text: 'Todas as Notas',
                         onTap: () {
                           setState(() {
-                            _filtroFavorito = false;
+                            _filtros = FiltrosAvancados();
                             _filtroExcluido = false;
                             _filtroCategoria = '';
                             _currentTitle = "Minhas Notas";
                             _selectedMenuId = "Todas as Notas";
-                            _carregarNotas();
                           });
+                          _carregarNotas(resetarScroll: true);
                         },
                       ),
                       _buildMenuItem(
@@ -297,13 +339,13 @@ class _ListaNotasPageState extends State<ListaNotasPage> {
                         text: 'Favoritas',
                         onTap: () {
                           setState(() {
-                            _filtroFavorito = true;
+                            _filtros = FiltrosAvancados(favorito: true);
                             _filtroExcluido = false;
                             _filtroCategoria = '';
                             _currentTitle = "Favoritas";
                             _selectedMenuId = "Favoritas";
-                            _carregarNotas();
                           });
+                          _carregarNotas(resetarScroll: true);
                         },
                       ),
                       _buildMenuItem(
@@ -312,13 +354,13 @@ class _ListaNotasPageState extends State<ListaNotasPage> {
                         text: 'Lixeira',
                         onTap: () {
                           setState(() {
-                            _filtroFavorito = false;
+                            _filtros = FiltrosAvancados();
                             _filtroExcluido = true;
                             _filtroCategoria = '';
                             _currentTitle = "Lixeira";
                             _selectedMenuId = "Lixeira";
-                            _carregarNotas();
                           });
+                          _carregarNotas(resetarScroll: true);
                         },
                       ),
                       const Divider(color: Colors.white),
@@ -330,43 +372,28 @@ class _ListaNotasPageState extends State<ListaNotasPage> {
                             child: Text('Categorias', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
                           ),
                         ),
-                      FutureBuilder<List<String>>(
-                        future: widget.categoriaRepository.buscarCategoriasUnicas(),
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState == ConnectionState.waiting) {
-                            return const Center(child: CircularProgressIndicator());
-                          } else if (snapshot.hasError) {
-                            return const Text('Erro ao carregar categorias.');
-                          } else {
-                            final categorias = snapshot.data ?? [];
-                            return Column(
-                              children: [
-                                ...categorias.map((categoria) => _buildMenuItem(
-                                  id: categoria,
-                                  icon: Icons.folder,
-                                  text: categoria,
-                                  onTap: () {
-                                    setState(() {
-                                      _filtroFavorito = false;
-                                      _filtroExcluido = false;
-                                      _filtroCategoria = categoria;
-                                      _currentTitle = categoria;
-                                      _selectedMenuId = categoria;
-                                      _carregarNotas();
-                                    });
-                                  },
-                                )).toList(),
-                                _buildMenuItem(
-                                  id: "Gerenciar Categorias",
-                                  icon: Icons.add,
-                                  text: "Gerenciar Categorias",
-                                  onTap: () {
-                                    _navegarGerenciarCategoria();
-                                  },
-                                ),
-                              ],
-                            );
-                          }
+                      // Categorias carregadas diretamente sem FutureBuilder
+                      ..._categorias.map((categoria) => _buildMenuItem(
+                        id: categoria,
+                        icon: Icons.folder,
+                        text: categoria,
+                        onTap: () {
+                          setState(() {
+                            _filtros = FiltrosAvancados();
+                            _filtroExcluido = false;
+                            _filtroCategoria = categoria;
+                            _currentTitle = categoria;
+                            _selectedMenuId = categoria;
+                          });
+                          _carregarNotas(resetarScroll: true);
+                        },
+                      )).toList(),
+                      _buildMenuItem(
+                        id: "Gerenciar Categorias",
+                        icon: Icons.add,
+                        text: "Gerenciar Categorias",
+                        onTap: () {
+                          _navegarGerenciarCategoria();
                         },
                       ),
                       
@@ -386,9 +413,39 @@ class _ListaNotasPageState extends State<ListaNotasPage> {
                 AppBar(
                   title: Text(_currentTitle),
                   actions: [
-                    IconButton(
-                      icon: const Icon(Icons.filter_list),
-                      onPressed: _abrirFiltrosModal,
+                    // Badge para mostrar filtros ativos
+                    Stack(
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.filter_list),
+                          onPressed: _abrirFiltrosAvancados,
+                        ),
+                        if (_temFiltrosAtivos())
+                          Positioned(
+                            right: 8,
+                            top: 8,
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color: Colors.red,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              constraints: const BoxConstraints(
+                                minWidth: 16,
+                                minHeight: 16,
+                              ),
+                              child: Text(
+                                _contarFiltrosAtivos().toString(),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                   ],
                 ),
@@ -412,6 +469,7 @@ class _ListaNotasPageState extends State<ListaNotasPage> {
                 ),
                 Expanded(
                   child: ListView.builder(
+                    controller: _scrollController,
                     itemCount: notas.length,
                     itemBuilder: (context, index) {
                       final nota = notas[index];
@@ -431,7 +489,7 @@ class _ListaNotasPageState extends State<ListaNotasPage> {
                               if (nota.tags.isNotEmpty)
                                 Wrap(
                                   spacing: 4.0,
-                                  children: nota.tags.map((tag) => Text('#$tag', style: const TextStyle(color: Colors.blueAccent))).toList(),
+                                  children: nota.tags.map((tag) => Chip(label: Text('#$tag'))).toList(),
                                 ),
                               if (nota.categorias.isNotEmpty)
                                 Text('Categoria: ${nota.categorias.join(', ')}', style: const TextStyle(fontStyle: FontStyle.italic)),
@@ -463,6 +521,18 @@ class _ListaNotasPageState extends State<ListaNotasPage> {
         ],
       ),
     );
+  }
+
+  bool _temFiltrosAtivos() {
+    return (_filtros.prioridade != null && _filtros.prioridade != 'Todas') || 
+           _filtros.favorito;
+  }
+
+  int _contarFiltrosAtivos() {
+    int count = 0;
+    if (_filtros.prioridade != null && _filtros.prioridade != 'Todas') count++;
+    if (_filtros.favorito) count++;
+    return count;
   }
 
   Widget _buildMenuItem({
