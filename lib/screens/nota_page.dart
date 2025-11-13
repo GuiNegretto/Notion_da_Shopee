@@ -15,7 +15,9 @@ class _NotaPageState extends State<NotaPage> {
   final _tituloController = TextEditingController();
   final _conteudoController = TextEditingController();
   String _prioridade = 'Baixa';
+  final _tagTextController = TextEditingController();
   List<String> _tags = [];
+  final _categoriaTextController = TextEditingController();
   List<String> _categorias = [];
 
   @override
@@ -65,6 +67,8 @@ class _NotaPageState extends State<NotaPage> {
         _tags.add(tag);
       });
     }
+
+    _tagTextController.clear();
   }
   
   void _addCategoria(String categoria) {
@@ -73,6 +77,8 @@ class _NotaPageState extends State<NotaPage> {
         _categorias.add(categoria);
       });
     }
+
+    _categoriaTextController.clear();
   }
 
   @override
@@ -184,6 +190,7 @@ class _NotaPageState extends State<NotaPage> {
             const Text('Tags: ', style: TextStyle(fontWeight: FontWeight.bold)),
             Expanded(
               child: TextField(
+                controller: _tagTextController,
                 onSubmitted: (value) {
                   _addTag(value);
                 },
@@ -221,6 +228,7 @@ class _NotaPageState extends State<NotaPage> {
             const Text('Categorias: ', style: TextStyle(fontWeight: FontWeight.bold)),
             Expanded(
               child: TextField(
+                controller: _categoriaTextController,
                 onSubmitted: (value) {
                   _addCategoria(value);
                 },
