@@ -39,20 +39,19 @@ class Nota {
     );
   }
 
-  Map<String, dynamic> toMap({bool toView = false}) {
+  Map<String, dynamic> toMap() {
     final map = <String, dynamic>{
       'titulo': titulo,
       'conteudo': conteudo,
       'prioridade': prioridade,
+      'favorito': favorito ? 1 : 0,    
+      'id': id,
+      'criado_em': criadoEm.toIso8601String(),
+      'atualizado_em': atualizadoEm.toIso8601String(),
+      'excluido': excluido ? 1 : 0,
+      'categorias': categorias,
+      'tags': tags
     };
-
-    if (toView) {
-      map['id'] = id;
-      map['criado_em'] = criadoEm.toIso8601String();
-      map['atualizado_em'] = atualizadoEm.toIso8601String();
-      map['favorito'] = favorito ? 1 : 0;
-      map['excluido'] = excluido ? 1 : 0;
-    }
 
     return map;
   }

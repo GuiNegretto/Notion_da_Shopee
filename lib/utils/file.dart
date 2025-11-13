@@ -7,9 +7,17 @@ import '../repositories/nota_repository.dart';
 import '../repositories/tag_repository.dart';
 import '../repositories/categoria_repository.dart';
 
-Future<void> salvarJsonComDialogo(List<Nota> notas) async {
+Future<void> salvarJsonComDialogo(List<Map<String, dynamic>> notas) async {
   String jsonString = jsonEncode(
-    notas.map((nota) => nota.toMap(toView: false)).toList()
+    notas.map((nota) {
+      dynamic n = nota;
+      
+      n.remove('excluido');
+      n.remove('criado_em');
+      n.remove('atualizado_em');
+
+      return n;
+    }).toList()
   );
   
   String? caminhoSelecionado = await FilePicker.platform.saveFile(
@@ -72,7 +80,10 @@ Future<void> lerJsonComDialogo() async {
         await notaRepository.inserirNota(
           dado["titulo"],
           dado["conteudo"],
-          prioridade: dado["prioridade"]
+          prioridade: dado["prioridade"],
+          favorito: dado["favorito"] == 1,
+          tags: dado["tags"].whereType<String>().toList(),
+          categorias: dado["categorias"].whereType<String>().toList()
         );
       });
       

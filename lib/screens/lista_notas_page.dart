@@ -108,8 +108,10 @@ class _ListaNotasPageState extends State<ListaNotasPage> {
     for (var n in notas) {
       if (n.id != null) {
         final tags = await widget.notaRepository.tagRepository.buscarTagsPorNota(n.id!);
+        final categorias = await widget.notaRepository.categoriaRepository.buscarCategoriasPorNota(n.id!);
         setState(() {
           n.tags = tags;
+          n.categorias = categorias;
         });
       }
     }
@@ -298,16 +300,9 @@ class _ListaNotasPageState extends State<ListaNotasPage> {
                         icon: Icons.file_upload,
                         text: 'Exportar',
                         onTap: () async {
-                          final listaNotas = await widget.notaRepository.buscarNotas(
-                            termo: "",
-                            prioridade: null,
-                            favorito: null,
-                            excluido: null,
-                            categoria: '',
-                            ordenacao: null,
-                          );
+                          final listaNotas = await widget.notaRepository.listarNotas();
 
-                          salvarJsonComDialogo(listaNotas.map((map) => Nota.fromMap(map)).toList());
+                          salvarJsonComDialogo(listaNotas);
                         },
                       ),
                       _buildMenuItem(
@@ -486,13 +481,13 @@ class _ListaNotasPageState extends State<ListaNotasPage> {
                                 padding: const EdgeInsets.symmetric(vertical: 4),
                                 child: Text('Prioridade: ${nota.prioridade}'),
                               ),
+                              if (nota.categorias.isNotEmpty)
+                                Text('Categoria: ${nota.categorias.join(', ')}', style: const TextStyle(fontStyle: FontStyle.italic)),
                               if (nota.tags.isNotEmpty)
                                 Wrap(
                                   spacing: 4.0,
                                   children: nota.tags.map((tag) => Chip(label: Text('#$tag'))).toList(),
                                 ),
-                              if (nota.categorias.isNotEmpty)
-                                Text('Categoria: ${nota.categorias.join(', ')}', style: const TextStyle(fontStyle: FontStyle.italic)),
                             ],
                           ),
                           trailing: IconButton(
